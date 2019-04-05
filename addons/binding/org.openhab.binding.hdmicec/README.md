@@ -1,47 +1,58 @@
-# <bindingName> Binding
+# <HDMI Cec> Binding
 
-_Give some details about what this binding is meant for - a protocol, system, specific device._
-
-_If possible, provide some resources like pictures, a YouTube video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
+Bidning to control devices connected via HDMI using CEC protocol. For example if you have a Raspebrry Pi 3 connected to a AV Receiver or TV, you can control other devices connected that support CEC. This is ideal for Sony PlayStation 4 which can't be turned on via IR, or Amazon Fire TV (stick/tv/cube) devices that use BT remotes.
 
 ## Supported Things
 
-_Please describe the different supported things / devices within this section._
-_Which different types are supported, which models were tested etc.?_
-_Note that it is planned to generate some part of this based on the XML files within ```ESH-INF/thing``` of your binding._
+It should support devices which support CEC. See [libcec supported devices](http://libcec.pulse-eight.com/Vendor/Support) for a list)
 
 ## Discovery
 
-_Describe the available auto-discovery features here. Mention for what it works and what needs to be kept in mind when using it._
+This version supports manual discovery. You can invoke discovery via the Refresh link in Paper UI. It will invoke device discovery on the CEC bus. This can take 30s to switch on and enumerate the devices so is not suitable for continuous background refresh.
 
 ## Binding Configuration
 
-_If your binding requires or supports general configuration settings, please create a folder ```cfg``` and place the configuration file ```<bindingId>.cfg``` inside it. In this section, you should link to this file and provide some information about the options. The file could e.g. look like:_
+The binding requires LibCEC to be installed and configured. 
 
 ```
-# Configuration for the Philips Hue Binding
-#
-# Default secret key for the pairing of the Philips Hue Bridge.
-# It has to be between 10-40 (alphanumeric) characters 
-# This may be changed by the user for security reasons.
-secret=EclipseSmartHome
+// Things file for Raspberry Pi3
+Bridge hdmicec:bridge:local [ cecClientPath="/usr/bin/cec-client", comPort="RPI"] 
 ```
 
-_Note that it is planned to generate some part of this based on the information that is available within ```ESH-INF/binding``` of your binding._
-
-_If your binding does not offer any generic configurations, you can remove this section completely._
+For Raspberry Pi, add the openhab user to the video group.
+```
+sudo adduser openhab video
+```
 
 ## Thing Configuration
 
-_Describe what is needed to manually configure a thing, either through the (Paper) UI or via a thing-file. This should be mainly about its mandatory and optional configuration parameters. A short example entry for a thing file can help!_
-
-_Note that it is planned to generate some part of this based on the XML files within ```ESH-INF/thing``` of your binding._
+Things need to be configured with the deviceIndex (a hex number) and address of the form n.n.n.n - these are found with the discovery process. Currently all devices are pulled in, regardless of type (TV, audio, player, recoreder), and treated as the same device type. 
 
 ## Channels
 
-_Here you should provide information about available channel types, what their meaning is and how they can be used._
+activeSource will send a signal to the target device to tell it to become active. This should switch it on, and configure the correct path through AV equipment to show the source.
+remoteButton will send a button down and up command to a thing. For example from the console you can use
+```
+smarthome:send hdmicec_equipment_local_Unknown_FireTVCube_remoteButton down
+```
+to send a down button to the device (in this case a Fire TV Cube). The remote support is dumb, you can try sending any command to any device.
 
-_Note that it is planned to generate some part of this based on the XML files within ```ESH-INF/thing``` of your binding._
+|	Names	|	Names	|	Names	|	Names	|	Names	|	Names	|
+|	---	|	---	|	---	|	---	|	---	|	---	|
+|	Select	|	0	|	Enter	|	Power	|	StopRecord	|	MuteFunction	|
+|	Up	|	1	|	Clear	|	VolumeUp	|	PauseRecord	|	RestoreVolumeFunction	|
+|	Down	|	2	|	NextFavorite	|	VolumeDown	|	Reserved	|	TuneFunction	|
+|	Left	|	3	|	ChannelUp	|	Mute	|	Angle	|	SelectMediaFunction	|
+|	Right	|	4	|	ChannelDown	|	Play	|	Subpicture	|	SelectA/VInputFunction	|
+|	RightUp	|	5	|	PreviousChannel	|	Stop	|	VOD	|	SelectAudioInputFunction	|
+|	RightDown	|	6	|	SoundSelect	|	Pause	|	Guide	|	PowerToggleFunction	|
+|	LeftUp	|	7	|	InputSelect	|	Record	|	Timer	|	PowerOffFunction	|
+|	LeftDown	|	8	|	DisplayInformation	|	Rewind	|	InitialConfiguration	|	PowerOnFunction	|
+|	RootMenu	|	9	|	Help	|	Fastforward	|	PlayFunction	|	Blue	|
+|	SetupMenu	|	Dot	|	PageUp	|	Eject	|	PausePlayFunction	|	Red	|
+|	ContentsMenu	|		|	PageDown	|	Forward	|	RecordFunction	|	Green	|
+|	FavoriteMenu	|		|		|	Backward	|	PauseRecordFunction	|	Yellow	|
+|	Exit	|		|		|		|	StopFunction	|	Data	|
 
 ## Full Example
 
