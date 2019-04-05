@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
  * @author Sam Spencer - Initial contribution
  */
 
+@NonNullByDefault
 public class HdmiEquipmentDiscoveryService extends AbstractDiscoveryService {
 
     private final Logger logger = LoggerFactory.getLogger(HdmiEquipmentDiscoveryService.class);
@@ -57,7 +58,7 @@ public class HdmiEquipmentDiscoveryService extends AbstractDiscoveryService {
         bridgeHandler.startDeviceDiscovery(this);
     }
 
-    public void processDevices(ArrayList<@NonNull DiscoveryResult> discoveryResults) {
+    public void processDevices(ArrayList<DiscoveryResult> discoveryResults) {
         logger.debug("processDevices() with {} results", discoveryResults.size());
         // TODO Auto-generated method stub
         for (DiscoveryResult discoveryResult : discoveryResults) {

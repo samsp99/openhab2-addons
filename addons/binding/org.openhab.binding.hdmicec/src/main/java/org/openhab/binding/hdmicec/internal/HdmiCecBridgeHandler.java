@@ -18,7 +18,9 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -64,8 +66,8 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
     public static final String ACTIVE_SOURCE_ON_REGEX = "activeSourceOnRegex";
     public static final String ACTIVE_SOURCE = "ActiveSourceOffRegex";
 
-    private String cecClientPath;
-    private String comPort;
+    private @Nullable String cecClientPath;
+    private @Nullable String comPort;
     private @Nullable String deviceIndex = null;
 
     // we're betting on the fact that the first value in () is the device ID. Seems valid from what I've seen!
@@ -75,7 +77,7 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
     private Pattern activeSourceOn = Pattern.compile(".*making .* \\((.)\\) the active source");
     private Pattern activeSourceOff = Pattern.compile(".*marking .* \\((.)\\) as inactive source");
     private Pattern eventPattern = Pattern.compile("^(?!.*(<<|>>)).*: (.*)$"); // the 2nd group is the event
-    private Pattern deviceDiscoveryPattern = Pattern.compile("device #([0-9]|[A-F]).+$");
+    private Pattern deviceDiscoveryPattern = Pattern.compile("device #([0-9]|[A-F]):\\s(\\w+)\\W*");
     private Pattern addressDiscoveryPattern = Pattern.compile("Addresses controlled by libCEC:\\s*([0-9]|[a-f]|[A-F])");
 
     private boolean isRunning;
@@ -85,8 +87,7 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
     private @Nullable BufferedReader bufferedReader;
     private @Nullable BufferedWriter writer;
 
-    @Nullable
-    private HdmiEquipmentDiscoveryService discoveryService = null;
+    private @Nullable HdmiEquipmentDiscoveryService discoveryService = null;
 
     public HdmiCecBridgeHandler(Bridge bridge) {
         super(bridge);
@@ -131,7 +132,7 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
             startCecClient();
             updateStatus(ThingStatus.ONLINE);
         } catch (Exception e) {
-            logger.debug("Bridge handler exception.", e);
+            logger.debug("Bridge handler exception: {}", e);
         }
     }
 
@@ -141,7 +142,7 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
         try {
             sendCommand("q");
         } catch (Exception e) {
-            logger.debug("Bridge handler exception.", e);
+            logger.debug("Bridge handler exception: {}", e);
         }
         super.dispose();
         logger.debug("Bridge handler disposed.");
@@ -156,9 +157,22 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
 
         logger.debug("startCecClient:builder.start()");
         process = builder.start();
-        bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
-        writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-        open();
+        if (process != null) {
+            @Nullable
+            InputStream inputStream = process.getInputStream();
+            if (inputStream != null) {
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.defaultCharset()));
+            }
+            @Nullable
+            OutputStream outputStream = process.getOutputStream();
+            if (outputStream != null) {
+                writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+            }
+            open();
+        } else {
+            logger.error("Process not Started");
+        }
+
     }
 
     private void stopCecClient() {
@@ -185,14 +199,13 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
         deviceIndex = null;
     }
 
-    private void logStream(BufferedReader reader) throws IOException {
+    private void logStream(@Nullable BufferedReader reader) throws IOException {
         String line = null;
-        while ((line = reader.readLine()) != null) {
+        while (reader != null && ((line = reader.readLine()) != null)) {
             logger.debug("inputStream: {}", line);
         }
     }
 
-    @SuppressWarnings({ "unused", "null" })
     private void open() {
         logger.debug("open()");
         isRunning = true;
@@ -211,7 +224,10 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
                                 return;
                             }
 
-                            line = bufferedReader.readLine();
+                            if (bufferedReader != null) {
+                                line = bufferedReader.readLine();
+                            }
+
                         } catch (IOException e) {
                             logger.error("Error reading from cec-client: {}", e.toString());
                             isRunning = false;
@@ -264,7 +280,9 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
                     }
                 }
             };
-        } else {
+        } else
+
+        {
             throw new IllegalStateException("The logger is already running");
         }
         thread.start();
@@ -285,15 +303,18 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
         }
     }
 
-    protected void handleDiscoveryOutput(BufferedReader reader) {
+    protected void handleDiscoveryOutput(@Nullable BufferedReader reader) {
         ArrayList<String> lines = new ArrayList<String>();
         long timeout = new Date().getTime() + (20 * 1000);
-        String line;
+        @Nullable
+        String line = null;
         boolean finished = false;
 
         do {
             try {
-                line = reader.readLine();
+                if (reader != null) {
+                    line = reader.readLine();
+                }
             } catch (IOException ex) {
                 logger.debug("handleDiscoveryOutput():Exception {}", ex.getMessage());
                 return;
@@ -413,7 +434,7 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
                         break;
                 }
             }
-        } while (!key.contentEquals("language"));
+        } while (key != null && !key.contentEquals("language"));
 
         logger.debug("processSingleDevice(): Found #{} - {} at {}", logicalAddr, osd, address);
         hashcode = (vendor + osd).hashCode();
@@ -426,8 +447,8 @@ public class HdmiCecBridgeHandler extends BaseBridgeHandler {
     }
 
     private String makeID(@Nullable String vendor, @Nullable String osd) {
-        String v = (vendor == null || vendor.contentEquals("")) ? "unknown" : vendor.replaceAll("\\W", "");
-        String n = (osd == null || osd.contentEquals("")) ? "unknown" : osd.replaceAll("\\W", "");
+        String v = (vendor == null || vendor.contentEquals("")) ? "Unknown" : vendor.replaceAll("\\W", "");
+        String n = (osd == null || osd.contentEquals("")) ? "Unknown" : osd.replaceAll("\\W", "");
         return v + "_" + n;
     }
 

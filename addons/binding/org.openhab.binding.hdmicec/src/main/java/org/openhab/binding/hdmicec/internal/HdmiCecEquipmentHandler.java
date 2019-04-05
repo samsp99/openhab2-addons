@@ -17,6 +17,7 @@ import static org.openhab.binding.hdmicec.internal.HdmiCecBindingConstants.*;
 import java.util.regex.Matcher;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -90,8 +91,8 @@ public class HdmiCecEquipmentHandler extends BaseThingHandler {
         bridgeHandler.sendCommand("txn " + bridgeDeviceIndex() + deviceIndex + ":45");
     }
 
-    private String bridgeDeviceIndex() {
-        return bridgeHandler.getBridgeIndex();
+    private @Nullable String bridgeDeviceIndex() {
+        return (bridgeHandler != null) ? bridgeHandler.getBridgeIndex() : null;
     }
 
     public String getDeviceIndex() {
