@@ -87,5 +87,6 @@
     <module>org.openhab.binding.yamahareceiver.test</module>
     <module>org.openhab.binding.zoneminder</module>
     <module>org.openhab.binding.zway</module>
+    <module>org.openhab.binding.hdmicec</module>
   </modules>
 </project>
