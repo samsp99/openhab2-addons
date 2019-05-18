@@ -107,7 +107,7 @@ public class SpotifyDeviceDiscoveryService extends AbstractDiscoveryService {
             try {
                 bridgeHandler.listDevices().forEach(this::thingDiscovered);
             } catch (RuntimeException e) {
-                logger.debug("Finding devices failed with message: ", e.getMessage());
+                logger.debug("Finding devices failed with message: {}", e.getMessage(), e);
             }
         }
     }
@@ -115,12 +115,12 @@ public class SpotifyDeviceDiscoveryService extends AbstractDiscoveryService {
     private void thingDiscovered(Device device) {
         Map<String, Object> properties = new HashMap<String, Object>();
 
-        properties.put(PROPERTY_SPOTIFY_DEVICE_ID, device.getId());
+        properties.put(PROPERTY_SPOTIFY_DEVICE_NAME, device.getName());
         ThingUID thing = new ThingUID(SpotifyBindingConstants.THING_TYPE_DEVICE, bridgeUID,
                 device.getId().substring(0, PLAYER_ID_LENGTH));
 
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thing).withBridge(bridgeUID)
-                .withProperties(properties).withRepresentationProperty(PROPERTY_SPOTIFY_DEVICE_ID)
+                .withProperties(properties).withRepresentationProperty(PROPERTY_SPOTIFY_DEVICE_NAME)
                 .withLabel(device.getName()).build();
 
         thingDiscovered(discoveryResult);
