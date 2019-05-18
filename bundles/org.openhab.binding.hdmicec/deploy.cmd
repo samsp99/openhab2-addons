@@ -1,0 +1,1 @@
+copy /y C:\Users\sam.FUNNYFARM\.m2\repository\org\openhab\addons\bundles\org.openhab.binding.hdmicec\2.5.0-SNAPSHOT\org.openhab.binding.hdmicec-2.5.0-SNAPSHOT.jar \\192.168.1.191\openHAB-share\openhab2-addons
